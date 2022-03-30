@@ -1,21 +1,21 @@
 package account
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
-	"github.com/google/uuid"
 
-	"github.com/setis-project/api/pkg"
+	"github.com/setis-project/api/pkg/database"
 	repo "github.com/setis-project/api/repo/admin/account"
 	"github.com/setis-project/api/utils"
 )
 
 // method: POST
-func Login(db *pkg.Db, redis *redis.Client) gin.HandlerFunc {
+func Login(db *database.Db, redisCli *redis.Client) gin.HandlerFunc {
 	type request struct {
 		Email    string `json:"email" binding:"required,email"`
 		Password string `json:"password" binding:"required"`
@@ -31,22 +31,27 @@ func Login(db *pkg.Db, redis *redis.Client) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		credentials, err := repo.Login(db, redis, body.Email, body.Password)
+		session, err := repo.Login(db, redisCli, body.Email, body.Password)
 		if err != nil {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		expiryDuration := time.Minute * 5
-		token := uuid.NewString()
-		redis.Set(token, credentials.Id, expiryDuration)
-		if err != nil {
+			log.Println(err)
 			ctx.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 			return
 		}
+
+		// fix maxAge
 		ctx.SetCookie(
 			"session",
-			token,
-			int(expiryDuration.Milliseconds()),
+			session.Token.String(),
+			int(time.Since(session.Expiry).Milliseconds()),
+			"/admin",
+			os.Getenv("DOMAIN"),
+			true,
+			true,
+		)
+		ctx.SetCookie(
+			"refresh-session",
+			session.RefreshToken.Token.String(),
+			int(time.Since(session.RefreshToken.Expiry).Milliseconds()),
 			"/admin",
 			os.Getenv("DOMAIN"),
 			true,

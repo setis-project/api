@@ -8,7 +8,7 @@ import (
 	"github.com/setis-project/api/routes/admin"
 )
 
-func SetRoutes(engine *gin.Engine, db *database.Db, redis *redis.Client) {
+func SetRoutes(engine *gin.Engine, db *database.Db, redisCli *redis.Client) {
 	group := engine.Group("")
-	admin.SetRoutes(group, db, redis)
+	admin.SetRoutes(group, db, redisCli)
 }

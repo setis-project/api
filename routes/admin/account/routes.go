@@ -8,8 +8,8 @@ import (
 	"github.com/setis-project/api/pkg/database"
 )
 
-func SetRoutes(router *gin.RouterGroup, db *database.Db, redis *redis.Client) {
+func SetRoutes(router *gin.RouterGroup, db *database.Db, redisCli *redis.Client) {
 	path := "/account"
-	router.POST(path+"/register", mw.EnsureAuthToken(), Register(db))
-	router.POST(path+"/login", Login(db, redis))
+	router.POST(path+"/register", mw.EnsureAuthToken(redisCli), Register(db))
+	router.POST(path+"/login", Login(db, redisCli))
 }

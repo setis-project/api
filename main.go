@@ -24,12 +24,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	redis, err := predis.Connect()
+	redisCli, err := predis.Connect()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	engine := gin.New()
-	routes.SetRoutes(engine, db, redis)
+	routes.SetRoutes(engine, db, redisCli)
 	engine.Run(":8080")
 }

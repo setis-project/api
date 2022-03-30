@@ -5,11 +5,15 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
+	"github.com/google/uuid"
+
+	predis "github.com/setis-project/api/pkg/redis"
 )
 
-func EnsureAuthToken() gin.HandlerFunc {
+func EnsureAuthToken(redisCli *redis.Client) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		cookie, err := ctx.Request.Cookie("session")
+		sessionCookie, err := ctx.Request.Cookie("session")
 		if err != nil {
 			if err == http.ErrNoCookie {
 				ctx.AbortWithStatus(http.StatusUnauthorized)
@@ -18,10 +22,21 @@ func EnsureAuthToken() gin.HandlerFunc {
 			ctx.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		if cookie.Expires.Before(time.Now()) {
+		sessionToken, err := uuid.Parse(sessionCookie.Value)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid value for session token"})
+			return
+		}
+		session, err := predis.GetSession(redisCli, sessionToken)
+		if err != nil {
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
+		if session.Expiry.Before(time.Now()) {
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
 		ctx.Next()
 	}
 }

@@ -25,21 +25,25 @@ FROM admin_account
 WHERE email=$1
 `
 
-func Login(db *database.Db, client *redis.Client, email, password string) (loginCredentials, error) {
-	row := loginCredentials{}
+func Login(db *database.Db, client *redis.Client, email, password string) (predis.Session, error) {
+	var session predis.Session
+	var row loginCredentials
 	err := db.Conn.QueryRow(*db.Ctx, queryLogin, email).Scan(&row.Id, &row.Password)
 	if err != nil {
-		return row, err
+		return session, err
 	}
 	if !pkg.CheckPasswordHash(row.Password, password) {
-		return row, errors.New("invalid credentials")
+		return session, errors.New("invalid credentials")
 	}
 	now := time.Now()
-	session := predis.NewSession(
+	session = predis.NewSession(
 		predis.NewRefreshToken(now.Add(time.Hour)),
 		row.Id,
 		now.Add(time.Minute*5),
 	)
-
-	return row, nil
+	err = session.Insert(client)
+	if err != nil {
+		return predis.GetUserSession(client, row.Id)
+	}
+	return session, err
 }
