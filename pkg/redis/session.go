@@ -2,7 +2,6 @@ package redis
 
 import (
 	"encoding/json"
-	"errors"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -30,43 +29,61 @@ func (s Session) IsExpired() bool {
 }
 
 func (s Session) Insert(client *redis.Client) error {
-	exp := time.Until(s.Expiry)
 	if client.Get("user:"+s.UserId.String()).Err() != redis.Nil {
-		return errors.New("user has an open session")
+		return ErrHasOpenSession
 	}
-	client.Set("session:"+s.Token.String(), s, exp)
-	client.Set("user:"+s.UserId.String(), s.Token, exp)
+	exp := time.Until(s.Expiry)
+	jsonSession, err := json.Marshal(s)
+	if err != nil {
+		return err
+	}
+	client.Set("session:"+s.Token.String(), jsonSession, exp)
+	client.Set("user:"+s.UserId.String(), s.Token.String(), exp)
 	return nil
 }
 
 func (s Session) Refresh(client *redis.Client, refreshToken uuid.UUID) (Session, error) {
 	var newSession Session
 	if s.RefreshToken.Token != refreshToken || s.RefreshToken.IsExpired() {
-		return newSession, errors.New("not authorized")
+		return newSession, ErrNotAuthorized
 	}
 	if client.Del("session:"+s.Token.String()).Val() == 0 {
-		return newSession, errors.New("session doesnt exists")
+		return newSession, ErrSessionNotExists
 	}
 	newSession = NewSession(
 		s.RefreshToken,
 		s.UserId,
 		s.Expiry,
 	)
-	newSession.Insert(client)
-	return newSession, nil
+	exp := time.Until(s.Expiry)
+	jsonSession, err := json.Marshal(newSession)
+	if err != nil {
+		return newSession, err
+	}
+	client.Set("session:"+s.Token.String(), jsonSession, exp)
+	client.Set("user:"+s.UserId.String(), s.Token.String(), exp)
+	return newSession, err
 }
 
 func GetSession(client *redis.Client, token uuid.UUID) (Session, error) {
 	var session Session
-	err := json.Unmarshal([]byte(client.Get("session:"+token.String()).Val()), &session)
+	redisSession := client.Get("session:" + token.String())
+	if redisSession.Err() == redis.Nil {
+		return session, ErrSessionNotExists
+	}
+	err := json.Unmarshal([]byte(redisSession.Val()), &session)
 	return session, err
 }
 
 func GetUserSession(client *redis.Client, userId uuid.UUID) (Session, error) {
 	var session Session
-	token, err := uuid.Parse(client.Get("user:" + userId.String()).Val())
+	redisUser := client.Get("user:" + userId.String())
+	if redisUser.Err() == redis.Nil {
+		return session, ErrUserNotExists
+	}
+	token, err := uuid.Parse(redisUser.Val())
 	if err != nil {
-		return session, errors.New("invalid value for session token")
+		return session, ErrInvalidSessionToken
 	}
 	return GetSession(client, token)
 }

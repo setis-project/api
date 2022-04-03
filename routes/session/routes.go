@@ -9,5 +9,5 @@ import (
 
 func SetRoutes(router *gin.RouterGroup, db *database.Db, redisCli *redis.Client) {
 	path := "/session"
-	router.GET(path+"/register", Refresh(redisCli))
+	router.GET(path+"/refresh", Refresh(redisCli))
 }

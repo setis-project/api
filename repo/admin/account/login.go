@@ -42,7 +42,7 @@ func Login(db *database.Db, client *redis.Client, email, password string) (predi
 		now.Add(time.Minute*5),
 	)
 	err = session.Insert(client)
-	if err != nil {
+	if err == predis.ErrHasOpenSession {
 		return predis.GetUserSession(client, row.Id)
 	}
 	return session, err

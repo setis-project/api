@@ -1,7 +1,6 @@
 package account
 
 import (
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -33,7 +32,6 @@ func Login(db *database.Db, redisCli *redis.Client) gin.HandlerFunc {
 		}
 		session, err := repo.Login(db, redisCli, body.Email, body.Password)
 		if err != nil {
-			log.Println(err)
 			ctx.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 			return
 		}
