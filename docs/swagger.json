@@ -1,0 +1,104 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is the Setis Project's API.",
+        "title": "Setis Project API",
+        "contact": {
+            "name": "API Support",
+            "email": "setisproject@gmail.com"
+        },
+        "license": {
+            "name": "GPL-3.0 License",
+            "url": "https://github.com/setis-project/api/blob/main/LICENSE"
+        }
+    },
+    "basePath": "/v1",
+    "paths": {
+        "/v1/admin/account/login": {
+            "post": {
+                "security": [
+                    {
+                        "securitydefinitions.apikey": []
+                    }
+                ],
+                "description": "login an admin",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "admin login",
+                "parameters": [
+                    {
+                        "description": "account email",
+                        "name": "email",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "account password",
+                        "name": "password",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Execution error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Execution error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.ApiError": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ApiRequestError": {
+            "type": "object",
+            "properties": {
+                "field": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ApiRequestErrors": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ApiRequestError"
+                    }
+                }
+            }
+        }
+    }
+}

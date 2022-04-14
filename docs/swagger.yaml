@@ -1,0 +1,66 @@
+basePath: /v1
+definitions:
+  models.ApiError:
+    properties:
+      error:
+        type: string
+    type: object
+  models.ApiRequestError:
+    properties:
+      field:
+        type: string
+      message:
+        type: string
+    type: object
+  models.ApiRequestErrors:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/models.ApiRequestError'
+        type: array
+    type: object
+info:
+  contact:
+    email: setisproject@gmail.com
+    name: API Support
+  description: This is the Setis Project's API.
+  license:
+    name: GPL-3.0 License
+    url: https://github.com/setis-project/api/blob/main/LICENSE
+  title: Setis Project API
+paths:
+  /v1/admin/account/login:
+    post:
+      consumes:
+      - application/json
+      description: login an admin
+      parameters:
+      - description: account email
+        in: body
+        name: email
+        required: true
+        schema:
+          type: string
+      - description: account password
+        in: body
+        name: password
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: ""
+        "400":
+          description: Execution error
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Execution error
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      security:
+      - securitydefinitions.apikey: []
+      summary: admin login
+      tags:
+      - Admin
+swagger: "2.0"

@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/setis-project/api/models"
+	"github.com/setis-project/api/core/models"
 )
 
 func GetErrorMsg(fe validator.FieldError) string {
@@ -18,14 +18,14 @@ func GetErrorMsg(fe validator.FieldError) string {
 	return "Unknown error"
 }
 
-func GetBindErrors(err error) ([]models.ErrorMsg, bool) {
+func GetBindErrors(err error) ([]models.ApiRequestError, bool) {
 	var v validator.ValidationErrors
 	if errors.As(err, &v) {
-		out := make([]models.ErrorMsg, len(v))
+		out := make([]models.ApiRequestError, len(v))
 		for i, fe := range v {
-			out[i] = models.ErrorMsg{Field: fe.Field(), Message: GetErrorMsg(fe)}
+			out[i] = models.ApiRequestError{Field: fe.Field(), Message: GetErrorMsg(fe)}
 		}
 		return out, true
 	}
-	return []models.ErrorMsg{}, false
+	return []models.ApiRequestError{}, false
 }
